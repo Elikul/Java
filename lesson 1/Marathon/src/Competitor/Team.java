@@ -6,18 +6,13 @@ package Competitor;
  */
 public class Team {
     String nameTeam; //название команды
-    Competitor[] competitors ={
-            new Human("David"),
-            new Human("kitty"),
-            new Dog("Pit"),
-            new Cat ("Funny")
-    };//участники команды марафона
+    Competitor[] competitors;//участники команды марафона
 
 
     //конструктор
-    public Team(String _nameTeam){
+    public Team(String _nameTeam, Competitor..._competitors){
         this.nameTeam = _nameTeam;
-
+        this.competitors = _competitors;
     }
 
     //метод получения участников марафона

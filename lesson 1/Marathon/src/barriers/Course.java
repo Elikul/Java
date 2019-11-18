@@ -9,11 +9,12 @@ import Competitor.Team;
  */
 public class Course {
     //массив препятствий
-    Obstacle[] line = {
-            new Cross(80),
-            new Wall(2),
-            new Water(60)
-    };
+    Obstacle[] line;
+
+    public Course(Obstacle... _line)
+    {
+        this.line = _line;
+    }
 
 
     //метод, который  просит команду пройти всю полосу
