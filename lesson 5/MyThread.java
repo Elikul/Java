@@ -1,3 +1,6 @@
+
+import static java.lang.Math.cos;
+import static java.lang.Math.sin;
 /**
  * 1) Создают одномерный длинный массив, например:
  * static final int size = 10000000;
@@ -32,8 +35,10 @@
  * Для второго метода замеряете время разбивки массива на 2, просчета каждого из двух массивов и склейки.
  */
 public class MyThread {
-    static final int size = 10000000;  //длина одномерного массива
-    static final int h = size / 2;  //половина длины одномернго массива
+    final int size = 10000000;  //длина одномерного массива
+    final int h = size / 2;  //половина длины одномернго массива
+    final int threads_count = 5; //количество потоков
+    final int part_size = size/threads_count; // определяем размерность двумерного массива
 
     //метод заполнения одномерного массива единицами
     public void fillArray(float[] mas){
@@ -66,59 +71,43 @@ public class MyThread {
 
         long a = System.currentTimeMillis(); //Засекают время выполнения
 
-        float[] arr1 = new float[h];
-        float[] arr2 = new float[h];
+        // разделяем данные
+        final float[][] m = new float[threads_count][part_size];
 
-        //деления одного массива на два
-        System.arraycopy(arr, 0, arr1, 0, h);
-        System.arraycopy(arr, h, arr2, 0, h);
 
-        //Проходят по всему массиву и для каждой ячейки считают новое значение по формуле
-        //создаём два потока с помощью анонимных классов, один для расчёта новых значений для первого массива, другой - для второго массива
-        Thread t1 = new Thread(new Runnable(){
-            @Override
-            public void run() {
-                for (int i = 0; i < arr1.length; i++) {
-                    arr1[i] = (float)(arr1[i] * Math.sin(0.2f + i / 5) * Math.cos(0.2f + i / 5) * Math.cos(0.4f + i / 2));
+        // создадим массив потоков
+        Thread[] t = new Thread[threads_count];
+        for (int i = 0; i < threads_count; i++) {
+            // будем копировать в двумерный массив данные из основного потока со сдвигом
+            System.arraycopy(arr, part_size * i, m[i], 0, part_size);
+            final int u = i;
+            t[i] = new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    // считаем массив со сдвигом
+                    int n = u *part_size;
+                    for (int j = 0; j < part_size; j++, n++) {
+                        m[u][j] = (float) (m[u][j] * sin(0.2f + n / 5) * cos(0.2f + n / 5) * cos(0.4f + n / 2));
+                    }
                 }
-            }
-        });
-
-        Thread t2 = new Thread(new Runnable(){
-            @Override
-            public void run() {
-                for (int i = 0; i < arr2.length; i++) {
-                    arr2[i] = (float)(arr2[i] * Math.sin(0.2f + i / 5) * Math.cos(0.2f + i / 5) * Math.cos(0.4f + i / 2));
-                }
-            }
-        });
-
-
-        //для экспиримента
-        //создаём два потока,наследуя  от интерфейса Runnable
-//        Thread t1 = new Thread(new MyRunnableClass(arr1));
-//        Thread t2 = new Thread(new MyRunnableClass(arr2));
-
-        //создаём два потока,наследуя  от класса Thread
-//         Thread t1 = new JThread(arr1);
-//         Thread t2 = new JThread(arr2);
-
-        //запуск потоков
-        t1.start();
-        t2.start();
+            });
+            t[i].start();
+        }
 
 
         //ожидает завершения потоков
         try {
-            t1.join();
-            t2.join();
+            for (int i = 0; i < threads_count; i++) {
+                t[i].join();
+            }
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
 
-        //склйка двух массивов опять в один
-        System.arraycopy(arr1, 0, arr, 0, h);
-        System.arraycopy(arr2, 0, arr, h, h);
+        // складываем массив обратно в исходный массив
+        for (int i = 0; i < threads_count; i++) {
+            System.arraycopy(m[i], 0, arr, i * part_size, part_size);
+        }
 
         System.out.println("Время работы второго метода: " + (System.currentTimeMillis() - a)  + " миллисекунд");
         System.out.println();
@@ -132,36 +121,4 @@ public class MyThread {
         lesson5.SecondMethod(); //запускаем второй метод
     }
 
-}
-
-//для эксперимента
-//Создадаём свой интерфейс Runnable
-class MyRunnableClass implements Runnable {
-    float[] arr;
-
-    public MyRunnableClass(float[] _arr) {
-        this.arr = _arr;
-    }
-
-    @Override
-    public void run() {
-        for (int i = 0; i < arr.length; i++)
-            arr[i] = (float) (arr[i] * Math.sin(0.2f + i / 5) * Math.cos(0.2f + i / 5) * Math.cos(0.4f + i / 2));
-    }
-}
-
-
-//Создадаём свой класс на основе Thread
-class JThread extends Thread {
-    float[] arr;
-
-    JThread(float[] _arr){
-        this.arr = _arr;
-    }
-
-    @Override
-    public void run(){
-        for (int i = 0; i < arr.length; i++)
-            arr[i] = (float) (arr[i] * Math.sin(0.2f + i / 5) * Math.cos(0.2f + i / 5) * Math.cos(0.4f + i / 2));
-    }
 }
